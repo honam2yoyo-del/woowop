@@ -8,8 +8,8 @@
          ⭐️ [앱 이름 및 아이콘 설정] ⭐️
          여기서 앱의 이름과 아이콘을 자유롭게 바꿀 수 있습니다!
          ========================================== -->
-    <title>생활비</title>
-    <meta name="apple-mobile-web-app-title" content="생활비"> <!-- 아이폰 홈 화면 추가 시 기본 이름 -->
+    <title>가계부</title>
+    <meta name="apple-mobile-web-app-title" content="가계부"> <!-- 아이폰 홈 화면 추가 시 기본 이름 -->
     <link rel="apple-touch-icon" href="apple-icon.jpg"> <!-- 바탕화면 아이콘 이미지 파일명 -->
     <!-- ========================================== -->
 
@@ -458,7 +458,7 @@
         <i data-lucide="wallet" style="color: var(--toss-blue); width: 36px; height: 36px;"></i>
     </div>
     <!-- ⭐️ 로그인 화면의 앱 이름 ⭐️ -->
-    <h1 style="margin: 0 0 12px 0; font-size: 2.2rem; letter-spacing: -1px;">생활비</h1>
+    <h1 style="margin: 0 0 12px 0; font-size: 2.2rem; letter-spacing: -1px;">가계부</h1>
     <p style="margin: 0; opacity: 0.9; font-size: 1.05rem;">클라우드 동기화로 안전하게 관리하세요</p>
     
     <button class="login-btn" onclick="loginWithGoogle()">
@@ -702,9 +702,9 @@
         </div>
         <div class="main-card" style="margin-top:0;">
             <div class="step-indicator" id="step-nav">
-                <div class="step-item active" id="nav-type">1. 유형</div>
-                <div class="step-item" id="nav-cat">2. 분류</div>
-                <div class="step-item" id="nav-detail">3. 금액</div>
+                <div class="step-item active" id="nav-type" onclick="goBack(1)" style="cursor: pointer;">1. 유형</div>
+                <div class="step-item" id="nav-cat" onclick="goBack('category')" style="cursor: pointer;">2. 분류</div>
+                <div class="step-item" id="nav-detail" onclick="goBack(3)" style="cursor: pointer;">3. 금액</div>
             </div>
             
             <div id="step-type" class="fade-in">
@@ -835,7 +835,10 @@
                     <button class="submit-btn" id="delete-btn" onclick="deleteData()" style="background-color: var(--bg-color); color: var(--text-normal); display:none; flex:0.4;">삭제</button>
                     <button class="submit-btn" id="submit-btn" onclick="submitData()" style="flex:1;">확인</button>
                 </div>
-                <span class="back-text" onclick="goBack('category')">분류 다시 선택하기</span>
+                <div style="display:flex; justify-content:center; gap: 30px; margin-top: 24px;">
+                    <span class="back-text" style="margin-top:0;" onclick="goBack(1)">유형 다시 선택</span>
+                    <span class="back-text" style="margin-top:0;" onclick="goBack('category')">분류 다시 선택</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1777,6 +1780,18 @@
             document.getElementById('input-date').value = `${yy}-${mm}-${dd}`;
         }
 
+        // [추가] 수정을 위해 돌아갔을 때를 위한 선택 상태(Highlight) 복원
+        document.querySelectorAll('.action-btn').forEach(btn => btn.classList.remove('selected'));
+        if (record.type === '수입') document.querySelector('.btn-income').classList.add('selected');
+        else if (record.type === '지출') document.querySelector('.btn-expense').classList.add('selected');
+        else if (record.type === '저축') document.querySelector('.btn-savings').classList.add('selected');
+
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            if (btn.innerText.trim() === record.subCategory || btn.innerText.trim() === record.mainCategory) {
+                btn.classList.add('selected');
+            }
+        });
+
         if (data.type === 'expenseFlow' || data.type === 'expenseFixed' || data.type === 'savings') {
             document.getElementById('pay-method-group').classList.remove('hidden');
             
@@ -1987,17 +2002,36 @@
     }
 
     function goBack(target) {
+        // 금액 입력 탭으로 바로 가려할 때 유효성 검사
+        if (target === 3 && !record.subCategory) return; 
+
         hideAllSteps();
-        if (target === 1) { updateNav(1); document.getElementById('step-type').classList.remove('hidden'); }
-        else if (target === 'expense-main') document.getElementById('step-cat-expense-main').classList.remove('hidden');
+        
+        if (target === 1) { 
+            updateNav(1); 
+            document.getElementById('step-type').classList.remove('hidden'); 
+        }
+        else if (target === 'expense-main') {
+            updateNav(2);
+            document.getElementById('step-cat-expense-main').classList.remove('hidden');
+        }
         else if (target === 'category') {
             updateNav(2);
             if (record.type === '수입') document.getElementById('step-cat-income').classList.remove('hidden');
             else if (record.type === '지출') {
                 if(record.mainCategory === '유동 지출') document.getElementById('step-cat-expense-flow').classList.remove('hidden');
                 else if(record.mainCategory === '고정 지출') document.getElementById('step-cat-expense-fixed').classList.remove('hidden');
+                else document.getElementById('step-cat-expense-main').classList.remove('hidden');
             }
             else if (record.type === '저축') document.getElementById('step-cat-savings').classList.remove('hidden');
+            else {
+                updateNav(1);
+                document.getElementById('step-type').classList.remove('hidden');
+            }
+        }
+        else if (target === 3) {
+            updateNav(3);
+            document.getElementById('step-final').classList.remove('hidden');
         }
     }
 
